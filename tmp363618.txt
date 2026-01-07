@@ -1,0 +1,353 @@
+TONG HOP DE VA DAP AN LINUX
+Nguon: Giai-chi-tiet-hon-Key-suong-suong-de-Linux (1).pdf
+
+==================================================
+DE SO 1
+==================================================
+
+Cau 1: Phan biet Copyleft va Copyright?
+Dap an:
+* Copyright (Ki hieu (c)):
+  - Cam sao chep, chinh sua, phan phoi.
+  - Mang tinh thuong mai la chinh.
+  - Su dung ma nguon dong.
+  - Doc quyen va co y nghia phap ly manh.
+* Copyleft (Ki hieu chu c nguoc trong vong tron):
+  - Tu do sao chep, chinh sua, phan phoi.
+  - Thuong mien phi.
+  - Su dung ma nguon mo.
+  - Khong doc quyen, dam bao quyen tu do cho nguoi dung.
+
+Cau 2: Tap tin /etc/shadow chua thong tin gi cua users he thong?
+Dap an:
+Chua thong tin bao mat ve mat khau cua nguoi dung, bao gom:
+- Ten nguoi dung.
+- Mat khau da duoc ma hoa (hash).
+- Ngay thay doi mat khau lan cuoi.
+- So ngay toi thieu va toi da giua cac lan thay doi mat khau.
+- Thoi gian canh bao truoc khi mat khau het han.
+- Thoi gian tai khoan bi vo hieu hoa sau khi het han mat khau.
+
+Cau 3: Tao script thuc hien cac yeu cau quan ly user (U1, U2).
+Yeu cau: Tao U1, U2 mat khau sv123456; xem thong tin; tao thu muc KMA_U1 trong U1 roi chuyen sang U2.
+Dap an (Script):
+#!/bin/bash
+# Tao user U1, U2 va thu muc home
+useradd -m -d /home/U1 U1
+useradd -m -d /home/U2 U2
+# Dat mat khau
+echo "U1:sv123456" | chpasswd
+echo "U2:sv123456" | chpasswd
+# Xem thong tin
+cat /etc/passwd | grep U1
+cat /etc/passwd | grep U2
+# Thao tac voi thu muc (chay duoi quyen U1 hoac root)
+mkdir -p /home/U1/KMA_U1
+mv /home/U1/KMA_U1 /home/U2/
+ls /home/U2
+
+Cau 4: Quan ly o dia va sao luu.
+Yeu cau: Dinh dang ext4 cho 1 phan vung; mount vao /THI1_HK; rsync file; umount.
+Dap an (Script):
+#!/bin/bash
+# Dinh dang phan vung (vi du /dev/sda2) la ext4
+mkfs -t ext4 /dev/sda2
+echo "Doi dinh dang thanh cong!"
+# Tao thu muc mount point
+mkdir -p /THI1_HK
+mkdir -p /THI2_HK
+# Mount
+mount /dev/sda2 /THI1_HK
+echo "Da mount!"
+# Sao luu rsync (vi du thu muc KMA_U1 tu home U2)
+rsync -avzh /home/U2/KMA_U1 /THI2_HK
+# Copy thuong
+cp -r /home/U2 /THI1_HK
+# Huy gan ket
+umount /THI1_HK
+# Kiem tra lai
+ls /THI1_HK
+
+==================================================
+DE SO 2
+==================================================
+
+Cau 1: Trong cac tieu chi cua to chuc OSI: Free Redistribution co nghia la gi?
+Dap an:
+Free Redistribution (Tu do phan phoi lai) nghia la:
+- Phan mem co the duoc tu do tang hoac ban nhu mot phan cua goi phan mem.
+- Giay phep khong duoc yeu cau tien ban quyen hoac khoan phi khac cho viec ban nhu vay.
+- Dam bao quyen tu do chia se phan mem cho bat ky ai.
+
+Cau 2: Co it nhat bao nhieu partition can duoc tao ra khi ta cai dat he dieu hanh Linux?
+Dap an:
+Can toi thieu 3 phan vung:
+1. /boot: Chua kernel khoi dong (min 100MB).
+2. / (root): Chua he thong tap tin (min 4GB).
+3. swap: Phan vung hoan doi (RAM ao). Kich thuoc swap thuong bang RAM (neu RAM < 32GB thi swap = 2*RAM, RAM lon hon thi tuy chinh).
+
+Cau 3: Tao script quan ly user U3, U4 va nhom root.
+Yeu cau: Tao U3, U4; gan vao group root; tao folder /KMA2; copy vao home U3; dung U3 xoa /KMA2.
+Dap an (Script):
+#!/bin/bash
+useradd -m -d /home/U3 U3
+useradd -m -d /home/U4 U4
+echo "U3:u3_123" | chpasswd
+echo "U4:u4_456" | chpasswd
+# Gan vao nhom root
+usermod -G root U3
+usermod -G root U4
+# Tao va copy thu muc
+mkdir /KMA2
+cp -r /KMA2 /home/U3/
+# Xoa thu muc duoi quyen U3
+su U3 -c "rm -rf /home/U3/KMA2"
+ls /home/U3
+
+Cau 4: Quan ly o dia, mount readonly.
+Yeu cau: Dinh dang ext2; mount vao /THI/THUCHANH; copy file; umount; remount khong cho ghi/xoa.
+Dap an (Script):
+#!/bin/bash
+mkfs -t ext2 /dev/sda3
+mkdir -p /THI/THUCHANH
+mount /dev/sda3 /THI/THUCHANH
+# Copy file bat ky
+cp -r /KMA2 /THI/THUCHANH
+# Huy mount
+umount /THI/THUCHANH
+# Mount lai va set quyen chi doc/thuc thi (khong ghi/xoa)
+mount /dev/sda3 /THI/THUCHANH
+chmod 555 /THI/THUCHANH
+
+==================================================
+DE SO 3
+==================================================
+
+Cau 1: Ma nguon NukeViet 3.0 duoc cung cap boi loai giay phep nao?
+Dap an:
+Duoc cung cap boi giay phep ma nguon mo GNU GPL (General Public License).
+
+Cau 2: Cho biet cac thu muc sau gom nhung file gi: /bin/; /dev/; /home/
+Dap an:
+- /bin/: Chua cac tap tin thuc thi (lenh) co ban cho nguoi dung (ls, cp, cat...).
+- /dev/: Chua cac tap tin thiet bi (device files) dai dien cho phan cung (sda, tty, sr0...).
+- /home/: Chua cac thu muc ca nhan cua nguoi dung (noi luu tru du lieu rieng).
+
+Cau 3: Script mount CDROM va copy file.
+Dap an (Script):
+#!/bin/bash
+# Xem danh sach o dia
+lsblk
+# Tao thu muc
+mkdir -p /KMA/Security
+mkdir -p /THI
+# Mount CDROM (thuong la sr0 hoac sr2)
+mount /dev/sr0 /KMA/Security
+# Copy file
+cp /KMA/Security/md5sum.txt /THI/
+ls /THI
+
+Cau 4: Cau hinh mang IP tinh.
+Dap an (Script):
+#!/bin/bash
+# Dat IP tinh (vi du card ens33)
+ifconfig ens33 192.168.0.100 netmask 255.255.255.0
+# Restart dich vu mang
+systemctl restart NetworkManager
+# Kiem tra
+ifconfig ens33
+ping -c 4 192.168.0.101
+# Tai file (dung wget)
+wget download.net/file1
+
+==================================================
+DE SO 4
+==================================================
+
+Cau 1: Trinh bay dinh nghia: OSS, Freeware, Shareware, Charityware.
+Dap an:
+- OSS (Open Source Software): Phan mem ma nguon mo, cho phep truy cap, sua doi ma nguon mien phi (vi du: Linux).
+- Freeware: Phan mem mien phi su dung nhung thuong khong cong khai ma nguon (vi du: Chrome).
+- Shareware: Phan mem dung thu, phai tra phi de dung ban day du hoac tiep tuc dung sau thoi gian thu (vi du: WinRAR).
+- Charityware: Phan mem mien phi nhung khuyen khich nguoi dung quyen gop tu thien (vi du: Vim).
+
+Cau 2: Cho biet cac thu muc sau gom nhung file gi: /sbin/; /tmp/; /var/
+Dap an:
+- /sbin/: Chua cac lenh thuc thi danh cho quan tri vien he thong (reboot, fdisk...).
+- /tmp/: Chua cac tap tin tam thoi, thuong bi xoa khi khoi dong lai.
+- /var/: Chua cac du lieu bien doi nhu log files, mail, database (/var/log, /var/www...).
+
+Cau 3: Tao user, file text va phan biet chu hoa thuong.
+Dap an (Script):
+#!/bin/bash
+useradd -m -d /home/U1 U1
+echo "U1:abc@123" | chpasswd
+# Tao file F1.txt va f1.txt (Linux phan biet chu hoa thuong)
+touch /home/U1/F1.txt
+touch /home/U1/f1.txt
+ls -l /home/U1/
+
+Cau 4: Phan quyen va doi ten file voi user khac.
+Dap an (Script):
+#!/bin/bash
+mkdir -p /KMA/Baitap
+touch /KMA/Baitap/vanban2.txt
+echo "Bai tap Linux" >> /KMA/Baitap/vanban2.txt
+# Doi quyen
+chmod 744 /KMA/Baitap/vanban2.txt
+# Cap quyen cho others de user khac co the sua/xoa trong thu muc cha
+chmod o+w /KMA
+chmod o+w /KMA/Baitap
+chmod o+w /KMA/Baitap/vanban2.txt
+# Tao user U25
+useradd -m U25
+echo "U25:sv123456" | chpasswd
+# Doi ten file duoi quyen U25
+su U25 -c "mv /KMA/Baitap/vanban2.txt /KMA/Baitap/soanthao.txt"
+ls -l /KMA/Baitap
+
+==================================================
+DE SO 5
+==================================================
+
+Cau 1: So sanh GPL va BSD.
+Dap an:
+- GPL (Copyleft): Yeu cau cac phan mem phai sinh (sua doi tu ma nguon goc) cung phai phat hanh duoi giay phep GPL (ma nguon mo). Bao ve quyen tu do chia se.
+- BSD: Cho phep su dung, sua doi va phan phoi lai (ke ca dong ma nguon thanh phan mem thuong mai) ma khong bat buoc phai mo ma nguon cua ban phai sinh. Tu do hon cho nha phat trien thuong mai.
+
+Cau 2: Y nghia lenh locate va find.
+Dap an:
+- locate "*.xls": Tim tat ca cac file co duoi .xls tren he thong (dua tren co so du lieu da index).
+- locate "/usr/oss/*linux*": Tim cac file co duong dan chua /usr/oss/ va ten chua tu "linux".
+- find -name "*.pdf": Tim cac file co duoi .pdf trong thu muc hien tai.
+
+Cau 3: Script tao user, group, kiem tra ID.
+Dap an (Script):
+#!/bin/bash
+useradd -m user1
+echo "user1:sv123456" | chpasswd
+groupadd group1
+usermod -G group1 user1
+# Kiem tra ID
+id user1
+# Tao file
+touch /home/user1/file1.txt
+echo "Hello World" > /home/user1/file1.txt
+ls -l /home/user1/file1.txt
+
+Cau 4: Phan quyen, nen file voi user thuong.
+Dap an (Script):
+#!/bin/bash
+useradd -m User123
+echo "User123:2711" | chpasswd
+groupadd G123
+mkdir /KMA
+touch /KMA/test2.txt
+# Cap quyen cho User123
+chmod o+rx /KMA
+chmod o+rx /KMA/test2.txt
+# Nen file duoi quyen User123
+su User123 -c "tar -cvf /home/User123/filenen.gz /KMA/test2.txt"
+
+==================================================
+DE SO 6
+==================================================
+
+Cau 1: Partition can thiet (Lap lai De 2).
+Dap an: /boot, / (root), swap.
+
+Cau 2: Y nghia lenh head, tail.
+Dap an:
+- head -10 oss1.txt: Hien thi 10 dong dau cua file oss1.txt.
+- tail -20 oss2.txt: Hien thi 20 dong cuoi cua file oss2.txt.
+- tail -f oss3.txt: Hien thi noi dung cuoi file oss3.txt va tiep tuc cap nhat khi file co du lieu moi (thuong dung xem log).
+
+Cau 3: Script sua noi dung file va nen.
+Dap an (Script):
+#!/bin/bash
+mkdir /KMA
+touch /KMA/svktmm.txt
+echo "Mot ngay tot lanh" > /KMA/svktmm.txt
+# Bo sung ten vao dong cuoi
+echo "Ho Va Ten" >> /KMA/svktmm.txt
+# Nen thu muc
+tar -cvf kma.tar.gz /KMA
+
+Cau 4: Doi dia chi IP, doi lop mang, doi MTU.
+Dap an (Script):
+#!/bin/bash
+# Kiem tra cau hinh
+ifconfig
+# Doi IP sang lop B (VD: 172.16.x.x)
+ifconfig ens33 172.16.1.1 netmask 255.255.0.0
+# Doi MTU
+ifconfig ens33 mtu 1000 up
+# Nen file bat ky
+tar -cvf KMA.tar /KMA
+
+==================================================
+DE SO 7
+==================================================
+
+Cau 1: Phan mem chay ung dung Windows tren Linux.
+Dap an: Wine, PlayOnLinux, CrossOver.
+
+Cau 2: Y nghia lenh chmod.
+Dap an:
+- chmod go+r oss1.txt: Them quyen doc (read) cho nhom (group) va nguoi khac (others).
+- chmod u-w oss2.txt: Bo quyen ghi (write) cua chu so huu (user).
+- chmod a-x oss3.txt: Bo quyen thuc thi (execute) cua tat ca moi nguoi (all).
+
+Cau 3: Giong De 5 cau 3.
+
+Cau 4: Quan ly 2 user va quyen truy cap.
+Dap an (Script):
+#!/bin/bash
+useradd -m user123
+useradd -m user456
+# User123 tao file
+chmod 777 / # (Luu y: chi lam tren moi truong thuc hanh de de cap quyen tao folder o root)
+su user123 -c "mkdir /baitap && touch /baitap/test.txt"
+su user123 -c "echo 'Ten SV - MSV' > /baitap/test.txt"
+# Cap quyen cho user456 (others) chi xem (r) va sua (w), khong thuc thi (x)
+chmod o=rw /baitap/test.txt
+# Doi ten user
+usermod -l 789user user456
+
+==================================================
+DE SO 8
+==================================================
+
+Cau 1: Cac file trong /bin va /dev (Lap lai De 3).
+Dap an:
+- /bin: Lenh thuc thi co ban.
+- /dev: File thiet bi.
+
+Cau 2: Su thay doi quyen truy cap (Lap lai De 7).
+
+Cau 3: Mount CD va copy file (Giong De 3).
+Dap an (Script):
+#!/bin/bash
+lsblk
+mkdir -p /KMA/data
+mount /dev/sr0 /KMA/data
+cp /KMA/data/file_bat_ky /
+ls /
+
+Cau 4: Quan ly tien trinh (Process).
+Dap an (Script):
+#!/bin/bash
+# Xem danh sach tien trinh
+ps -aux
+# Dung/Giet tien trinh (VD PID 1234)
+# kill 1234
+# Thay doi do uu tien (renice)
+# renice 3 -p 1234
+# Kiem tra RAM
+free -h
+# Kiem tra o dia
+lsblk
+# Tao file, ghi thong tin, nen
+touch test.txt
+echo "Kiem tra cuoi ky" > test.txt
+tar -cvf test.tar test.txt
